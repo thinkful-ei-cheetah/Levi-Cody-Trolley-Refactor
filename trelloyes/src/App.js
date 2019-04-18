@@ -4,34 +4,47 @@ import './App.css';
 
 class App extends Component {
 constructor(props){
-  super()
-  this.state = props
+  super(props)
+  this.state = {...props}
   }
    
-  
+  //state = { 
+    //store: { 
+      //lists: [ {...}, {...} , {...} ] ,
+      //allCards: { a: {...} , b: {...} , ... }  
+    //} 
+  //}
 
-  handleDelete = (id) => {
-    console.log(this.state)
+  handleDelete = (listId, cardId) => {
+    console.log(listId, cardId)
+    const newLists = this.state.store.lists.map( list => {
+      list.cardIds = list.cardIds.filter(id => id !== cardId)
+      return list
+    } )
+    const newAllCards = Object.assign({}, this.state.store.allCards)
+    delete newAllCards[cardId]
+    const newStore = {lists: newLists, allCards: newAllCards}
     this.setState({
-      store : this.state.store.lists.filter((item,index ) => index !== id)
+      store : newStore
     })
   }
 
   render() {
     // const { store } = this.state
+    console.log(this.state)
     return (
       <main className='App'>
         <header className='App-header'>
           <h1>Trelloyes!</h1>
         </header>
-        {console.log(this.state)}
         <div className='App-list'>
-          {state.store.lists.map(list => (
+          {this.state.store.lists.map((list, index) => (
             <List
-              key={list.id}
+              key={index}
+              listKey={list.id}
               header={list.header}
-              cards={list.cardIds.map(id => store.allCards[id])}
-              handleDelete={()=>this.handleDelete()}
+              cards={list.cardIds.map(id => this.state.store.allCards[id])}
+              handleDelete={(a,b)=>this.handleDelete(a,b)}
             />
           ))}
         </div>
