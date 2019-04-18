@@ -14,7 +14,6 @@ constructor(props){
       //allCards: { a: {...} , b: {...} , ... }  
     //} 
   //}
-
   handleDelete = (listId, cardId) => {
     console.log(listId, cardId)
     const newLists = this.state.store.lists.map( list => {
@@ -29,9 +28,34 @@ constructor(props){
     })
   }
 
+  newRandomCard = () => {
+    const id = Math.random().toString(36).substring(2, 4)
+      + Math.random().toString(36).substring(2, 4);
+    return {
+      id,
+      title: `Random Card ${id}`,
+      content: 'lorem ipsum',
+    }
+  }
+
+  handleRandomCard = (listId) => {
+    const myNewCard = this.newRandomCard()
+    const newLists = this.state.store.lists.map( list =>{
+      if (list.id === listId) {
+        list.cardIds = [...list.cardIds, myNewCard.id]
+      }
+      return list
+    })
+    const newAllCards = {...this.state.store.allCards, [myNewCard.id]: myNewCard}
+    this.setState({
+      store: {
+        lists: newLists,
+        allCards: newAllCards }
+    })
+  }
+
   render() {
-    // const { store } = this.state
-    console.log(this.state)
+    // console.log(this.state)
     return (
       <main className='App'>
         <header className='App-header'>
@@ -45,6 +69,7 @@ constructor(props){
               header={list.header}
               cards={list.cardIds.map(id => this.state.store.allCards[id])}
               handleDelete={(a,b)=>this.handleDelete(a,b)}
+              handleRandomCard={this.handleRandomCard}
             />
           ))}
         </div>
