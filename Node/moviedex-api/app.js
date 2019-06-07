@@ -1,39 +1,58 @@
 'use strict';
 
+require('dotenv').config();
 const express = require('express');
 const morgan = require('morgan');
-
 const app = express();
+const movies = require('./movieData');
+const cors = require('cors');
+const helmet = require('helmet');
 
-app.use(morgan('common'));
-const books = require('./book.js');
 
-app.get('/books', (req, res) => {
-  const { search = ' ', sort } = req.query;
-  if (sort) {
-    if (!['title', 'rank'].includes(sort)) {
-      return res
-        .status(400)
-        .send('sort must be one of title or rank');
-    }
+const morganSetting = process.env.NODE_ENV === 'production' ? 'tiny' : 'common';
+app.use(morgan(morganSetting));
+app.use(cors());
+app.use(helmet());
+
+app.use(function validateBearerToken(req, res, next) {
+  const API_TOKEN = process.env.API_TOKEN;
+  const authToken = req.get('Authorization');
+  if (!authToken || authToken.split(' ')[1] !== API_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized request' });
   }
-
-  let results = books
-    .filter(book =>
-      book
-        .title
-        .toLowerCase()
-        .includes(search.toLowerCase()));
-
-  if (sort) {
-    results.sort((a, b) => {
-      return a[sort] > b[sort] ? 1 : a[sort] < b[sort] ? -1 : 0;
-    });
-  }
-  res
-    .json(results);
+  next();
 });
 
-app.listen(8000, () => {
-  console.log('server started on port 8000');
+app.get('/movie', (req, res) => {
+  let response = movies;
+
+  if (req.query.genre) {
+    response = response.filter(movie =>
+      movie.genre.toLowerCase().includes(req.query.genre.toLowerCase())
+    );
+  }
+
+  if (req.query.country) {
+    response = response.filter(movie =>
+      movie.country.toLowerCase().includes(req.query.country.toLowerCase())
+    );
+  }
+  if (req.query.avg_vote) {
+    response = response.filter(movie =>
+      Number(movie.avg_vote) >= Number(req.query.avg_vote)
+    );
+  }
+  res.json(response);
 });
+app.use((error, req, res, next) => {
+  let response;
+  if (process.env.NODE_ENV === 'production') {
+    response = { error: { message: 'server error' } };
+  } else {
+    response = { error };
+  }
+  res.status(500).json(response);
+});
+
+const PORT = process.env.PORT || 8000;
+module.exports = app;
